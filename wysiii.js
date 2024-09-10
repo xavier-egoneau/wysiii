@@ -2,6 +2,8 @@ class Wysiii {
     constructor(inputElement) {
         this.input = inputElement;
         this.options = this.parseOptions();
+        this.history = [];
+        this.historyIndex = -1;
         this.createEditor();
         this.attachEventListeners();
     }
@@ -33,14 +35,15 @@ class Wysiii {
             orderedList: { icon: 'fa-solid fa-list-ol', label: 'Insérer une liste numérotée' },
             link: { icon: 'fa-solid fa-link', label: 'Insérer un lien' },
             image: { icon: 'fa-solid fa-image', label: 'Insérer une image' },
-            code: { icon: 'fa-solid fa-code', label: 'Afficher le code source' }
+            code: { icon: 'fa-solid fa-code', label: 'Afficher le code source' },
+            table: { icon: 'fa-solid fa-table', label: 'Insérer un tableau' }
         };
 
         this.options.buttons.forEach(buttonName => {
             const button = buttonConfig[buttonName];
             if (button) {
                 const btn = document.createElement('button');
-                btn.type = 'button'; // Correction du bug : définir explicitement le type du bouton
+                btn.type = 'button';
                 btn.innerHTML = `<i class="${button.icon}" aria-hidden="true"></i><span class="sr-only">${button.label}</span>`;
                 btn.title = button.label;
                 btn.setAttribute('aria-label', button.label);
@@ -72,6 +75,12 @@ class Wysiii {
         this.editor.contentEditable = true;
         this.editor.innerHTML = this.input.value || '<p>Commencez à écrire ici...</p>';
 
+        // Ajouter des instructions pour les lecteurs d'écran
+        const instructions = document.createElement('p');
+        instructions.className = 'sr-only';
+        instructions.textContent = "Utilisez les touches de flèches pour naviguer dans le texte. Ctrl+B pour mettre en gras, Ctrl+I pour l'italique, Ctrl+U pour souligner.";
+        this.container.appendChild(instructions);
+
         this.container.appendChild(this.toolbar);
         this.container.appendChild(this.editor);
 
@@ -91,6 +100,8 @@ class Wysiii {
                     if (url) this.execCommand('insertImage', url);
                 } else if (command === 'code') {
                     this.toggleSource();
+                } else if (command === 'table') {
+                    this.insertTable();
                 } else {
                     this.execCommand(command);
                 }
@@ -115,6 +126,35 @@ class Wysiii {
                 e.preventDefault();
                 this.updateInputValue();
             }
+
+            if (e.ctrlKey || e.metaKey) {
+                switch(e.key.toLowerCase()) {
+                    case 'b':
+                        e.preventDefault();
+                        this.execCommand('bold');
+                        break;
+                    case 'i':
+                        e.preventDefault();
+                        this.execCommand('italic');
+                        break;
+                    case 'u':
+                        e.preventDefault();
+                        this.execCommand('underline');
+                        break;
+                    case 'z':
+                        e.preventDefault();
+                        if (e.shiftKey) {
+                            this.redo();
+                        } else {
+                            this.undo();
+                        }
+                        break;
+                }
+            }
+        });
+
+        this.editor.addEventListener('focus', () => {
+            this.announceForScreenReader('Vous êtes maintenant dans l\'éditeur de texte enrichi.');
         });
     }
 
@@ -136,6 +176,7 @@ class Wysiii {
 
     updateInputValue() {
         this.input.value = this.editor.innerHTML;
+        this.saveToHistory();
     }
 
     getColorName(hexColor) {
@@ -149,6 +190,56 @@ class Wysiii {
             '#00FFFF': 'Cyan'
         };
         return colors[hexColor.toUpperCase()] || hexColor;
+    }
+
+    insertTable() {
+        const rows = prompt('Nombre de lignes:', '3');
+        const cols = prompt('Nombre de colonnes:', '3');
+        if (rows && cols) {
+            let table = '<table border="1"><tbody>';
+            for (let i = 0; i < rows; i++) {
+                table += '<tr>';
+                for (let j = 0; j < cols; j++) {
+                    table += '<td>Cell</td>';
+                }
+                table += '</tr>';
+            }
+            table += '</tbody></table>';
+            this.execCommand('insertHTML', table);
+        }
+    }
+
+    saveToHistory() {
+        this.historyIndex++;
+        this.history = this.history.slice(0, this.historyIndex);
+        this.history.push(this.editor.innerHTML);
+    }
+
+    undo() {
+        if (this.historyIndex > 0) {
+            this.historyIndex--;
+            this.editor.innerHTML = this.history[this.historyIndex];
+            this.updateInputValue();
+        }
+    }
+
+    redo() {
+        if (this.historyIndex < this.history.length - 1) {
+            this.historyIndex++;
+            this.editor.innerHTML = this.history[this.historyIndex];
+            this.updateInputValue();
+        }
+    }
+
+    announceForScreenReader(message) {
+        const announcement = document.createElement('p');
+        announcement.className = 'sr-only';
+        announcement.setAttribute('aria-live', 'polite');
+        announcement.textContent = message;
+        document.body.appendChild(announcement);
+        setTimeout(() => {
+            document.body.removeChild(announcement);
+        }, 1000);
     }
 }
 
