@@ -1,7 +1,92 @@
+// Système d'internationalisation
+const i18n = {
+    fr: {
+        bold: 'Gras',
+        italic: 'Italique',
+        underline: 'Souligné',
+        strikethrough: 'Barré',
+        list: 'Liste à puces',
+        orderedList: 'Liste numérotée',
+        link: 'Insérer un lien',
+        image: 'Insérer une image',
+        code: 'Afficher le code source',
+        table: 'Insérer un tableau',
+        fontSize: 'Taille de police',
+        selectFontSize: 'Sélectionner la taille de police',
+        paragraphStyle: 'Style de paragraphe',
+        selectParagraphStyle: 'Sélectionner le style de paragraphe',
+        paragraph: 'Paragraphe',
+        heading1: 'Titre 1',
+        heading2: 'Titre 2',
+        heading3: 'Titre 3',
+        quote: 'Citation',
+        editLink: 'Modifier le lien',
+        deleteLink: 'Supprimer le lien',
+        openInNewTab: 'Ouvrir dans un nouvel onglet',
+        enterNewUrl: 'Entrez la nouvelle URL :',
+        textColor: 'Couleur du texte'
+    },
+    en: {
+        bold: 'Bold',
+        italic: 'Italic',
+        underline: 'Underline',
+        strikethrough: 'Strikethrough',
+        list: 'Bullet list',
+        orderedList: 'Numbered list',
+        link: 'Insert link',
+        image: 'Insert image',
+        code: 'View source code',
+        table: 'Insert table',
+        fontSize: 'Font size',
+        selectFontSize: 'Select font size',
+        paragraphStyle: 'Paragraph style',
+        selectParagraphStyle: 'Select paragraph style',
+        paragraph: 'Paragraph',
+        heading1: 'Heading 1',
+        heading2: 'Heading 2',
+        heading3: 'Heading 3',
+        quote: 'Quote',
+        editLink: 'Edit link',
+        deleteLink: 'Delete link',
+        openInNewTab: 'Open in new tab',
+        enterNewUrl: 'Enter new URL:',
+        textColor: 'Text color'
+    }
+};
+
+class WysiiiPluginManager {
+    constructor(wysiii) {
+        this.wysiii = wysiii;
+        this.plugins = {};
+    }
+
+    register(name, plugin) {
+        this.plugins[name] = plugin;
+    }
+
+    init() {
+        for (const plugin of Object.values(this.plugins)) {
+            if (typeof plugin.init === 'function') {
+                plugin.init(this.wysiii);
+            }
+        }
+    }
+
+    exec(hookName, ...args) {
+        for (const plugin of Object.values(this.plugins)) {
+            if (typeof plugin[hookName] === 'function') {
+                plugin[hookName](...args);
+            }
+        }
+    }
+}
+
 class Wysiii {
-    constructor(inputElement) {
+    constructor(inputElement, options = {}) {
         this.input = inputElement;
+        this.lang = options.lang || 'fr';
         this.options = this.parseOptions();
+        this.pluginManager = new WysiiiPluginManager(this);
         this.history = [];
         this.historyIndex = -1;
         this.createEditor();
@@ -13,6 +98,10 @@ class Wysiii {
             buttons: this.input.dataset.wysiiiButtons ? JSON.parse(this.input.dataset.wysiiiButtons) : ['bold', 'italic', 'underline'],
             colors: this.input.dataset.wysiiiColors ? this.input.dataset.wysiiiColors.split(',') : []
         };
+    }
+
+    t(key) {
+        return i18n[this.lang][key] || key;
     }
 
     createEditor() {
@@ -27,16 +116,16 @@ class Wysiii {
         this.toolbar.setAttribute('aria-label', 'Options de formatage');
         
         const buttonConfig = {
-            bold: { icon: 'fa-solid fa-bold', label: 'Mettre en gras' },
-            italic: { icon: 'fa-solid fa-italic', label: 'Mettre en italique' },
-            underline: { icon: 'fa-solid fa-underline', label: 'Souligner' },
-            strikethrough: { icon: 'fa-solid fa-strikethrough', label: 'Barrer' },
-            list: { icon: 'fa-solid fa-list-ul', label: 'Insérer une liste à puces' },
-            orderedList: { icon: 'fa-solid fa-list-ol', label: 'Insérer une liste numérotée' },
-            link: { icon: 'fa-solid fa-link', label: 'Insérer un lien' },
-            image: { icon: 'fa-solid fa-image', label: 'Insérer une image' },
-            code: { icon: 'fa-solid fa-code', label: 'Afficher le code source' },
-            table: { icon: 'fa-solid fa-table', label: 'Insérer un tableau' }
+            bold: { icon: 'fa-solid fa-bold', label: this.t('bold') },
+            italic: { icon: 'fa-solid fa-italic', label: this.t('italic') },
+            underline: { icon: 'fa-solid fa-underline', label: this.t('underline') },
+            strikethrough: { icon: 'fa-solid fa-strikethrough', label: this.t('strikethrough') },
+            list: { icon: 'fa-solid fa-list-ul', label: this.t('list') },
+            orderedList: { icon: 'fa-solid fa-list-ol', label: this.t('orderedList') },
+            link: { icon: 'fa-solid fa-link', label: this.t('link') },
+            image: { icon: 'fa-solid fa-image', label: this.t('image') },
+            code: { icon: 'fa-solid fa-code', label: this.t('code') },
+            table: { icon: 'fa-solid fa-table', label: this.t('table') }
         };
 
         this.options.buttons.forEach(buttonName => {
@@ -52,10 +141,43 @@ class Wysiii {
             }
         });
 
+        // Ajout du sélecteur de taille de police
+        const fontSizeSelect = document.createElement('select');
+        fontSizeSelect.title = this.t('fontSize');
+        fontSizeSelect.setAttribute('aria-label', this.t('selectFontSize'));
+        fontSizeSelect.dataset.command = 'fontSize';
+        [1, 2, 3, 4, 5, 6, 7].forEach(size => {
+            const option = document.createElement('option');
+            option.value = size;
+            option.textContent = size;
+            fontSizeSelect.appendChild(option);
+        });
+        this.toolbar.appendChild(fontSizeSelect);
+
+        // Ajout du sélecteur de style de paragraphe
+        const formatSelect = document.createElement('select');
+        formatSelect.title = this.t('paragraphStyle');
+        formatSelect.setAttribute('aria-label', this.t('selectParagraphStyle'));
+        formatSelect.dataset.command = 'formatBlock';
+        const formats = [
+            { value: 'p', label: this.t('paragraph') },
+            { value: 'h1', label: this.t('heading1') },
+            { value: 'h2', label: this.t('heading2') },
+            { value: 'h3', label: this.t('heading3') },
+            { value: 'blockquote', label: this.t('quote') }
+        ];
+        formats.forEach(format => {
+            const option = document.createElement('option');
+            option.value = format.value;
+            option.textContent = format.label;
+            formatSelect.appendChild(option);
+        });
+        this.toolbar.appendChild(formatSelect);
+
         if (this.options.colors.length > 0) {
             const colorSelect = document.createElement('select');
-            colorSelect.title = 'Couleur du texte';
-            colorSelect.setAttribute('aria-label', 'Sélectionner la couleur du texte');
+            colorSelect.title = this.t('textColor');
+            colorSelect.setAttribute('aria-label', this.t('textColor'));
             colorSelect.dataset.command = 'foreColor';
             this.options.colors.forEach(color => {
                 const option = document.createElement('option');
@@ -93,10 +215,10 @@ class Wysiii {
             if (button) {
                 const command = button.dataset.command;
                 if (command === 'link') {
-                    const url = prompt('Entrez l\'URL du lien :');
+                    const url = prompt(this.t('enterNewUrl'));
                     if (url) this.execCommand('createLink', url);
                 } else if (command === 'image') {
-                    const url = prompt('Entrez l\'URL de l\'image :');
+                    const url = prompt(this.t('enterNewUrl'));
                     if (url) this.execCommand('insertImage', url);
                 } else if (command === 'code') {
                     this.toggleSource();
@@ -156,10 +278,20 @@ class Wysiii {
         this.editor.addEventListener('focus', () => {
             this.announceForScreenReader('Vous êtes maintenant dans l\'éditeur de texte enrichi.');
         });
+
+        this.editor.addEventListener('contextmenu', (e) => {
+            const linkElement = e.target.closest('a');
+            if (linkElement) {
+                e.preventDefault();
+                this.showLinkMenu(linkElement, e.pageX, e.pageY);
+            }
+        });
     }
 
     execCommand(command, value = null) {
+        this.pluginManager.exec('beforeExecCommand', command, value);
         document.execCommand(command, false, value);
+        this.pluginManager.exec('afterExecCommand', command, value);
         this.editor.focus();
     }
 
@@ -231,6 +363,8 @@ class Wysiii {
         }
     }
 
+
+
     announceForScreenReader(message) {
         const announcement = document.createElement('p');
         announcement.className = 'sr-only';
@@ -241,9 +375,91 @@ class Wysiii {
             document.body.removeChild(announcement);
         }, 1000);
     }
+
+    showLinkMenu(linkElement, x, y) {
+        const menu = document.createElement('div');
+        menu.className = 'wysiii-link-menu';
+        menu.style.position = 'absolute';
+        menu.style.left = `${x}px`;
+        menu.style.top = `${y}px`;
+
+        const editButton = document.createElement('button');
+        editButton.textContent = this.t('editLink');
+        editButton.addEventListener('click', () => this.editLink(linkElement));
+
+        const deleteButton = document.createElement('button');
+        deleteButton.textContent = this.t('deleteLink');
+        deleteButton.addEventListener('click', () => this.deleteLink(linkElement));
+
+        const newTabCheckbox = document.createElement('input');
+        newTabCheckbox.type = 'checkbox';
+        newTabCheckbox.id = 'newTabCheckbox';
+        newTabCheckbox.checked = linkElement.target === '_blank';
+        newTabCheckbox.addEventListener('change', (e) => {
+            linkElement.target = e.target.checked ? '_blank' : '';
+        });
+
+        const newTabLabel = document.createElement('label');
+        newTabLabel.htmlFor = 'newTabCheckbox';
+        newTabLabel.textContent = this.t('openInNewTab');
+
+        menu.appendChild(editButton);
+        menu.appendChild(deleteButton);
+        menu.appendChild(newTabCheckbox);
+        menu.appendChild(newTabLabel);
+
+        document.body.appendChild(menu);
+
+        const closeMenu = () => {
+            document.body.removeChild(menu);
+            document.removeEventListener('click', closeMenu);
+        };
+
+        setTimeout(() => {
+            document.addEventListener('click', closeMenu);
+        }, 0);
+    }
+
+    editLink(linkElement) {
+        const newUrl = prompt(this.t('enterNewUrl'), linkElement.href);
+        if (newUrl) {
+            linkElement.href = newUrl;
+        }
+    }
+
+    deleteLink(linkElement) {
+        const textNode = document.createTextNode(linkElement.textContent);
+        linkElement.parentNode.replaceChild(textNode, linkElement);
+    }
+
+    initPlugins() {
+        this.pluginManager.init();
+    }
 }
 
+// Initialisation
 document.addEventListener('DOMContentLoaded', () => {
-    const inputs = document.querySelectorAll('input.wysiii[type="text"]');
-    inputs.forEach(input => new Wysiii(input));
+const inputs = document.querySelectorAll('input.wysiii[type="text"]');
+inputs.forEach(input => {
+    const wysiii = new Wysiii(input);
+    wysiii.initPlugins();
 });
+});
+
+// Exemple d'utilisation d'un plugin
+const myPlugin = {
+init(wysiii) {
+    console.log('Mon plugin est initialisé');
+},
+beforeExecCommand(command, value) {
+    console.log(`Commande sur le point d'être exécutée: ${command}`);
+},
+afterExecCommand(command, value) {
+    console.log(`Commande exécutée: ${command}`);
+}
+};
+
+// Vous pouvez enregistrer le plugin comme ceci:
+// const wysiii = new Wysiii(inputElement);
+// wysiii.pluginManager.register('monPlugin', myPlugin);
+// wysiii.initPlugins();
