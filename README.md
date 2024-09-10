@@ -1,15 +1,17 @@
 # Documentation de Wysiii
 
-Wysiii est une bibliothèque JavaScript légère pour créer des éditeurs WYSIWYG (What You See Is What You Get) à partir de simples champs de texte HTML.
+Wysiii est une bibliothèque JavaScript légère et extensible pour créer des éditeurs WYSIWYG (What You See Is What You Get) à partir de simples champs de texte HTML.
 
 ## Table des matières
 
 1. [Installation](#installation)
 2. [Utilisation de base](#utilisation-de-base)
 3. [Configuration](#configuration)
-4. [API](#api)
-5. [Exemples](#exemples)
-6. [Personnalisation](#personnalisation)
+4. [Internationalisation](#internationalisation)
+5. [Système de plugins](#système-de-plugins)
+6. [API](#api)
+7. [Exemples](#exemples)
+8. [Personnalisation](#personnalisation)
 
 ## Installation
 
@@ -46,7 +48,7 @@ Vous pouvez personnaliser chaque instance de Wysiii en utilisant des attributs d
 Utilisez l'attribut `data-wysiii-buttons` pour spécifier les boutons à afficher :
 
 ```html
-<input type="text" class="wysiii" data-wysiii-buttons='["bold", "italic", "link"]'>
+<input type="text" class="wysiii" data-wysiii-buttons='["bold", "italic", "link", "image", "table"]'>
 ```
 
 Boutons disponibles :
@@ -59,6 +61,7 @@ Boutons disponibles :
 - `link`: Insérer un lien
 - `image`: Insérer une image
 - `code`: Afficher le code source
+- `table`: Insérer un tableau
 
 ### Palette de couleurs
 
@@ -68,17 +71,59 @@ Utilisez l'attribut `data-wysiii-colors` pour définir une palette de couleurs :
 <input type="text" class="wysiii" data-wysiii-colors="#000000,#FF0000,#00FF00,#0000FF">
 ```
 
+## Internationalisation
+
+Wysiii supporte maintenant plusieurs langues. Pour changer la langue, passez l'option `lang` lors de l'initialisation :
+
+```javascript
+const wysiii = new Wysiii(inputElement, { lang: 'en' });
+```
+
+Langues actuellement supportées : 'fr' (français) et 'en' (anglais).
+
+## Système de plugins
+
+Wysiii inclut maintenant un système de plugins pour étendre ses fonctionnalités.
+
+### Création d'un plugin
+
+```javascript
+const myPlugin = {
+    init(wysiii) {
+        console.log('Mon plugin est initialisé');
+    },
+    beforeExecCommand(command, value) {
+        console.log(`Commande sur le point d'être exécutée: ${command}`);
+    },
+    afterExecCommand(command, value) {
+        console.log(`Commande exécutée: ${command}`);
+    }
+};
+```
+
+### Enregistrement d'un plugin
+
+```javascript
+const wysiii = new Wysiii(inputElement);
+wysiii.pluginManager.register('monPlugin', myPlugin);
+wysiii.initPlugins();
+```
+
 ## API
 
 La classe `Wysiii` expose les méthodes suivantes :
 
-### `constructor(inputElement)`
+### `constructor(inputElement, options = {})`
 
 Crée une nouvelle instance de Wysiii pour l'élément input spécifié.
 
 ### `parseOptions()`
 
 Analyse les options configurées via les attributs de données.
+
+### `t(key)`
+
+Traduit une clé selon la langue actuelle.
 
 ### `createEditor()`
 
@@ -100,13 +145,25 @@ Bascule entre l'affichage du contenu formaté et du code source HTML.
 
 Met à jour la valeur de l'input caché avec le contenu de l'éditeur.
 
-### `getContent()`
+### `insertTable()`
 
-Retourne le contenu HTML de l'éditeur.
+Insère un tableau dans l'éditeur.
 
-### `setContent(html)`
+### `undo()` et `redo()`
 
-Définit le contenu HTML de l'éditeur.
+Annule ou rétablit la dernière action.
+
+### `showLinkMenu(linkElement, x, y)`
+
+Affiche un menu contextuel pour gérer un lien.
+
+### `editLink(linkElement)` et `deleteLink(linkElement)`
+
+Modifie ou supprime un lien existant.
+
+### `initPlugins()`
+
+Initialise les plugins enregistrés.
 
 ## Exemples
 
@@ -116,12 +173,19 @@ Définit le contenu HTML de l'éditeur.
 <input type="text" class="wysiii" name="content">
 ```
 
-### Éditeur personnalisé avec boutons spécifiques et palette de couleurs
+### Éditeur personnalisé avec boutons spécifiques, palette de couleurs et langue anglaise
 
 ```html
 <input type="text" class="wysiii" name="content" 
-       data-wysiii-buttons='["bold", "italic", "link", "image"]'
+       data-wysiii-buttons='["bold", "italic", "link", "image", "table"]'
        data-wysiii-colors="#000000,#FF0000,#00FF00,#0000FF">
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const input = document.querySelector('input.wysiii');
+    const wysiii = new Wysiii(input, { lang: 'en' });
+    wysiii.initPlugins();
+});
+</script>
 ```
 
 ## Personnalisation
@@ -131,6 +195,7 @@ Vous pouvez personnaliser l'apparence de Wysiii en modifiant le fichier CSS. Les
 - `.wysiii-container`: Conteneur principal de l'éditeur
 - `.wysiii-toolbar`: Barre d'outils
 - `.wysiii-editor`: Zone d'édition
+- `.wysiii-link-menu`: Menu contextuel des liens
 
 Exemple de personnalisation :
 
@@ -147,3 +212,4 @@ Exemple de personnalisation :
 
 ---
 
+Pour toute question supplémentaire ou assistance, n'hésitez pas à contacter le support ou à consulter le dépôt du projet.
