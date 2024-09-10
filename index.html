@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulaire avec Wysiii</title>
+    <link rel="stylesheet" href="wysiii.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <h1>Formulaire avec Wysiii</h1>
+    <form id="myForm">
+        <div>
+            <label for="field1">Champ 1:</label>
+            <input type="text" id="field1" name="field1" class="wysiii" data-wysiii-buttons='["bold", "italic", "underline","image"]'>
+        </div>
+        <div>
+            <label for="field2">Champ 2:</label>
+            <input type="text" id="field2" name="field2" class="wysiii" data-wysiii-buttons='["bold", "italic", "underline", "link"]' data-wysiii-colors="#000000,#FF0000,#00FF00,#0000FF">
+        </div>
+        <button type="submit">Soumettre</button>
+    </form>
+
+    <script src="wysiii.js"></script>
+</body>
+</html>

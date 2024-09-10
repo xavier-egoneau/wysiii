@@ -1,0 +1,88 @@
+:root {
+    --wysiii-primary-color: #007bff;
+    --wysiii-secondary-color: #6c757d;
+    --wysiii-background-color: #f8f9fa;
+    --wysiii-border-color: #dee2e6;
+}
+
+.wysiii-container {
+    max-width: 100%;
+    margin: 10px 0;
+    border: 1px solid var(--wysiii-border-color);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.wysiii-toolbar {
+    padding: 10px;
+    background-color: var(--wysiii-background-color);
+    border-bottom: 1px solid var(--wysiii-border-color);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 5px;
+}
+
+.wysiii-toolbar button,
+.wysiii-toolbar select {
+    padding: 8px;
+    background-color: #fff;
+    border: 1px solid var(--wysiii-border-color);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s, box-shadow 0.2s;
+}
+
+.wysiii-toolbar button:hover,
+.wysiii-toolbar select:hover {
+    background-color: var(--wysiii-background-color);
+}
+
+.wysiii-toolbar button:focus,
+.wysiii-toolbar select:focus {
+    outline: 2px solid var(--wysiii-primary-color);
+    outline-offset: 2px;
+}
+
+.wysiii-editor {
+    min-height: 100px;
+    padding: 15px;
+    background-color: #ffffff;
+    border: none;
+    font-size: 16px;
+}
+
+.wysiii-editor:focus {
+    outline: none;
+    box-shadow: inset 0 0 0 2px var(--wysiii-primary-color);
+}
+
+@media (max-width: 768px) {
+    .wysiii-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .wysiii-toolbar button,
+    .wysiii-toolbar select {
+        width: 100%;
+        justify-content: flex-start;
+        padding: 10px;
+    }
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
